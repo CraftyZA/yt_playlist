@@ -1,6 +1,7 @@
 import argparse
 import re
 from pytube import Playlist
+from pytube.exceptions import PytubeError
 
 arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument("-p", "--playlist", required=True, help="Youtube Music Playlist URL")
@@ -14,9 +15,18 @@ directory = args['directory']
 
 playlist._video_regex = re.compile(r"\"url\":\"(/watch\?v=[\w-]*)")
 
-print("Downloading " + str(len(playlist.video_urls)) + " files.")
+print(f"Downloading " + str(len(playlist.video_urls)) + " files.")
 for video in playlist.videos:
-    print("Getting " + video.title + " ...")
-    audioStream = video.streams.get_by_itag(youtube_stream_audio)
-    audioStream.download(output_path=directory)
+    try:
+        print("Getting " + video.title + " ...")
+        audioStream = video.streams.get_by_itag(youtube_stream_audio)
+        if audioStream:
+            audioStream.download(output_path=directory)
+            print(f"Downloaded: {video.title}")
+        else:
+            print(f"Stream with itag {youtube_stream_audio} not found for video: {video.title}")
+    except PytubeError as e:
+        print(f"Failed to download {video.title}: {str(e)}")
+    except Exception as e:
+        print(f"An unexpected error occurred with video {video.title}: {str(e)}")
 
